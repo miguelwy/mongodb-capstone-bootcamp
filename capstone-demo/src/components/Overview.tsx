@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { RCS } from '../data';
+import type { Health } from '../api';
 import { Leaf, RcBadge } from './Common';
 import mongodbLogo from '../assets/mongodb-logo.svg';
 
@@ -17,9 +18,16 @@ const RUN = [
   { t: '33–40', label: 'Recap & next steps' },
 ];
 
-const PAGES = ['Context', 'Proposed RCs'] as const;
+const PAGES = ['Context', 'Proposed RCs', 'Demo environment'] as const;
 
-export default function Overview({ onStart }: { onStart: () => void }) {
+// What was prepared in Atlas for each RC. Kept short: the presenter explains the rest.
+const ENV = [
+  { rc: 1 as const, title: 'Search & recommendations', items: ['products · 8 synthetic items', 'Voyage embeddings', 'Atlas Search + Vector Search indexes'] },
+  { rc: 2 as const, title: 'Flash-sale checkout', items: ['orders sharded on { location, customerId }', '3-node replica set per shard', 'Order + inventory in one transaction'] },
+  { rc: 3 as const, title: 'Europe data placement', items: ['Global Cluster · 2 zones', 'Location mappings · US/CA → NA, DE/FR → EU', 'Placement read back via explain()'] },
+];
+
+export default function Overview({ live, onStart }: { live: Health | null; onStart: () => void }) {
   const [page, setPage] = useState(0);
 
   return (
@@ -97,7 +105,7 @@ export default function Overview({ onStart }: { onStart: () => void }) {
             </div>
           </section>
         </div>
-      ) : (
+      ) : page === 1 ? (
         <div key="rcs" className="fade-in">
           <section className="section section--first">
             <div className="section__head">
@@ -134,10 +142,67 @@ export default function Overview({ onStart }: { onStart: () => void }) {
                 </li>
               ))}
             </ol>
+            <button className="btn btn--primary" onClick={() => setPage(2)}>
+              Demo environment →
+            </button>
+          </section>
+        </div>
+      ) : (
+        <div key="env" className="fade-in">
+          <section className="section section--first">
+            <div className="section__head">
+              <h2>Demo environment</h2>
+              {live ? (
+                <span className="tag tag--live">Live Atlas cluster</span>
+              ) : (
+                <span className="tag tag--hypothesis">Cluster offline · browser simulation</span>
+              )}
+            </div>
+            <div className="rc-grid">
+              {ENV.map((e) => (
+                <article className="rc-card env-card" key={e.rc}>
+                  <div className="rc-card__top">
+                    <span className="rc-card__num">{e.rc}</span>
+                    <h3>{e.title}</h3>
+                  </div>
+                  <ul className="env-list">
+                    {e.items.map((it) => (
+                      <li key={it}>
+                        <Leaf size={13} /> {it}
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="env-strip" aria-label="Cluster">
+            <div className="env-strip__zones">
+              {(live?.topology ?? [
+                { shard: 'shard-0', zone: 'Zone 1', region: 'us-east-1' },
+                { shard: 'shard-1', zone: 'Zone 2', region: 'eu-west-1' },
+              ]).map((t, i) => (
+                <div className="env-zone" key={t.shard}>
+                  <span className="env-zone__label">{i === 0 ? 'North America' : 'Europe'}</span>
+                  <strong>
+                    {t.zone} · {t.region}
+                  </strong>
+                  <span className="muted small">Shard {i} · replica set</span>
+                </div>
+              ))}
+            </div>
+            <p className="env-strip__note">
+              {live?.version ? `MongoDB ${live.version} · ` : ''}synthetic data · sized to demonstrate the patterns, not
+              Trendify's workload
+            </p>
+          </section>
+
+          <div className="cta-row">
             <button className="btn btn--primary" onClick={onStart}>
               Start → Discover
             </button>
-          </section>
+          </div>
         </div>
       )}
     </div>

@@ -18,4 +18,4 @@ Live mode needs `atlas/.env` (see `atlas/README.md` for cluster setup and seed d
 | Europe | Region switch updates `location` (shard key) → Atlas moves the order to that zone |
 | Reset journey | Restores seed stock and deletes `LIVE-*` orders |
 
-- Tabs: ← / → / Home / End on a focused tab. "Presenter notes" and "Close & recap" work on every tab.
+- Tabs: ← / → / Home / End on a focused tab. Press N for presenter notes; "Close & recap" works on every tab.

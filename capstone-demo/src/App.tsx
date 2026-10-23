@@ -55,6 +55,9 @@ export default function App() {
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape' && recapOpen) setRecapOpen(false);
+      // Presenter notes have no on-screen button: press N (outside text fields) to toggle.
+      const typing = (e.target as HTMLElement)?.closest?.('input, textarea');
+      if (!typing && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'n') setNotesOpen((v) => !v);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -94,13 +97,6 @@ export default function App() {
             <span className="pill pill--dark">TFW · 40 min</span>
           </div>
           <div className="topbar__actions">
-            <button
-              className={`btn btn--ghost-dark btn--sm ${notesOpen ? 'is-on' : ''}`}
-              aria-pressed={notesOpen}
-              onClick={() => setNotesOpen((v) => !v)}
-            >
-              Presenter notes
-            </button>
             <button className="btn btn--ghost-dark btn--sm" onClick={reset}>
               Reset journey
             </button>
@@ -186,7 +182,7 @@ export default function App() {
             <Recap onReset={reset} journey={journey} />
           ) : (
             <div key={tab} className="fade-in">
-              {tab === 'overview' && <Overview onStart={() => go('search')} />}
+              {tab === 'overview' && <Overview live={live} onStart={() => go('search')} />}
               {tab === 'search' && (
                 <SearchDemo
                   live={live}

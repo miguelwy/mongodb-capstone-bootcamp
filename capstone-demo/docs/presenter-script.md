@@ -3,7 +3,7 @@
 Use the spoken lines as a guide, not a memorized monologue. Demo actions are part of the time box. Ask discovery prompts directly, leave a short beat, and move on without inventing customer answers.
 
 **App:** `npm run dev:live` → http://localhost:5173 · footer must read **"Live Atlas cluster · synthetic data"**.
-**Presenter notes** (top-right toggle) mirror this script per tab; the audience does not see them unless toggled.
+**Presenter notes**: press **N** to show or hide (no on-screen button). They mirror this script per tab.
 
 ---
 
@@ -68,6 +68,18 @@ Use the spoken lines as a guide, not a memorized monologue. Demo actions are par
 "Three: place regional data and writes deliberately as Trendify expands into Europe while keeping regional access performant. To evaluate: Atlas Global Clusters.
 
 "Please flag anything you would reword or prioritize differently. Adjacent topics go in the Parking Lot so we stay focused — you'll see it at the end."
+
+*Keep this to ~2 minutes so the next page fits in the block.*
+
+**Click:** **Demo environment →**.
+
+### ~9:15–10:00 | What we prepared in Atlas
+
+**On screen:** Page **3 · Demo environment** — three columns (one per RC) and the cluster strip with **North America · Zone 1 · us-east-1** and **Europe · Zone 2 · eu-west-1**. With the cluster online, the tag reads **Live Atlas cluster** and the zones and MongoDB version are read from the cluster.
+
+**Say (~45 s):**
+
+"Before the demos, a quick look at what we prepared. This is a live Atlas cluster with synthetic data. For RC 1, a small product catalog with embeddings and both Atlas Search and Vector Search indexes. For RC 2, order data sharded across replica sets, with order and inventory updated in one transaction. For RC 3, a Global Cluster with two zones — US East and Ireland — and location mappings that decide where each order lives. It's sized to demonstrate the patterns, not Trendify's workload."
 
 **Click:** **Start → Discover**.
 

@@ -2050,3 +2050,68 @@ button {
 .prove-single {
   margin-top: 24px;
 }
+
+/* ---------- Demo environment page ---------- */
+.env-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.env-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: var(--navy);
+}
+.env-list .leaf {
+  margin-top: 4px;
+}
+.env-strip {
+  margin-top: 20px;
+  background: var(--navy);
+  color: #e8edeb;
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: grid;
+  gap: 12px;
+}
+.env-strip__zones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.env-zone {
+  background: var(--navy-3);
+  border: 1px solid #3d4f58;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.env-zone strong {
+  color: var(--green);
+  font-size: 1.05rem;
+}
+.env-zone__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #889397;
+}
+.env-zone .muted {
+  color: #889397;
+}
+.env-strip__note {
+  font-size: 0.85rem;
+  color: #c1c7c6;
+}
+@media (max-width: 720px) {
+  .env-strip__zones {
+    grid-template-columns: 1fr;
+  }
+}

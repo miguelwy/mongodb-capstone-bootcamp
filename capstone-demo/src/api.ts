@@ -10,6 +10,7 @@ export interface Placement {
 export interface Health {
   live: boolean;
   vector: boolean;
+  version?: string;
   topology: Placement[];
 }
 

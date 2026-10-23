@@ -236,7 +236,7 @@ export const NOTES: Record<TabId | 'recap', Notes> = {
     time: '0–10 min · target 10 min',
     open:
       'Trendify 3.0 is about being ready before next Black Friday. Based on the scenario, I want to propose three capabilities to validate—not conclusions.',
-    action: 'Page 1: walk the Before → Consequence → Why now chains. Page 2: the three proposed RCs and run of show.',
+    action: 'Page 1: walk the Before → Consequence → Why now chains. Page 2: the three proposed RCs. Page 3: what was prepared in Atlas for each RC (~45 s).',
     prompts: [
       'Do these three reflect your priorities, and in what order?',
       'What would success look like for each, and how is it measured today?',

@@ -44,6 +44,7 @@ async function loadTopology() {
   );
 }
 const topology = await loadTopology();
+const version = (await client.db('admin').command({ buildInfo: 1 })).version;
 console.log('topology:', topology);
 
 async function placementOf(filter) {
@@ -233,7 +234,7 @@ http
     const url = new URL(req.url, 'http://x');
     try {
       if (req.method === 'GET' && url.pathname === '/api/health') {
-        return json(res, 200, { live: true, vector: hasVoyage(), topology });
+        return json(res, 200, { live: true, vector: hasVoyage(), version, topology });
       }
       if (req.method === 'GET' && url.pathname === '/api/search') {
         return json(
