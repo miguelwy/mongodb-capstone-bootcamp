@@ -290,9 +290,9 @@ export const NOTES: Record<TabId | 'recap', Notes> = {
     ],
     transition: 'Let’s step back and connect the three RCs.',
     proves: 'A vocabulary for discussing location-aware data placement.',
-    doesNotProve: 'GDPR compliance, Trendify’s residency policy, or regional performance.',
+    doesNotProve: 'Trendify’s residency policy or regional performance.',
     close:
-      'This is a placement concept to validate with technical, security, and legal stakeholders—not a compliance guarantee.',
+      'This is a placement concept to validate with technical, security, and legal stakeholders.',
   },
   recap: {
     time: '33–40 min · target 7 min',
