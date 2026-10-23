@@ -2,17 +2,18 @@ import { useState } from 'react';
 import { RCS } from '../data';
 import type { Health } from '../api';
 import { Leaf, RcBadge } from './Common';
+import { METRICS } from '../metrics';
 import mongodbLogo from '../assets/mongodb-logo.svg';
 
 const CHAINS = [
-  { rc: 1 as const, before: 'Split search & recs, slow refresh', consequence: 'Lower engagement & AOV', why: 'Personalization is the differentiator' },
+  { rc: 1 as const, before: 'Recs slow to update, built on an analytics copy', consequence: 'Irrelevant suggestions, lower AOV', why: 'Personalization is the differentiator' },
   { rc: 2 as const, before: 'Checkout latency in flash sales', consequence: 'Cart abandonment', why: 'Next Black Friday' },
   { rc: 3 as const, before: 'Fragmented inventory, multi-region & GDPR strain', consequence: 'Missed sales, compliance burden', why: 'Europe expansion' },
 ];
 
 const RUN = [
   { t: '0–10', label: 'Context & RCs' },
-  { t: '10–18', label: 'Search', rc: 1 },
+  { t: '10–18', label: 'Recommendations', rc: 1 },
   { t: '18–26', label: 'Checkout', rc: 2 },
   { t: '26–33', label: 'Europe', rc: 3 },
   { t: '33–40', label: 'Recap & next steps' },
@@ -22,7 +23,7 @@ const PAGES = ['Context', 'Proposed RCs', 'Demo environment'] as const;
 
 // What was prepared in Atlas for each RC. Kept short: the presenter explains the rest.
 const ENV = [
-  { rc: 1 as const, title: 'Search & recommendations', items: ['products · 8 synthetic items', 'Voyage embeddings', 'Atlas Search + Vector Search indexes'] },
+  { rc: 1 as const, title: 'Real-time recommendations', items: ['products · 8 items + Voyage embeddings', 'events + session profile per shopper', 'Vector Search recs · Atlas Search for queries'] },
   { rc: 2 as const, title: 'Flash-sale checkout', items: ['orders sharded on { location, customerId }', '3-node replica set per shard', 'Order + inventory in one transaction'] },
   { rc: 3 as const, title: 'Europe data placement', items: ['Global Cluster · 2 zones', 'Location mappings · US/CA → NA, DE/FR → EU', 'Placement read back via explain()'] },
 ];
@@ -110,7 +111,7 @@ export default function Overview({ live, onStart }: { live: Health | null; onSta
           <section className="section section--first">
             <div className="section__head">
               <h2>Proposed Required Capabilities</h2>
-              <span className="tag tag--hypothesis">Hypotheses · metrics TBD</span>
+              <span className="tag tag--hypothesis">Targets set with Trendify</span>
             </div>
             <div className="rc-grid">
               {RCS.map((r) => (
@@ -120,6 +121,14 @@ export default function Overview({ live, onStart }: { live: Health | null; onSta
                     <h3>{r.short}</h3>
                   </div>
                   <p className="rc-card__stmt">{r.statement}</p>
+                  <ul className="rc-card__targets" aria-label="Targets">
+                    {METRICS.filter((m) => m.rc === r.n).map((m) => (
+                      <li key={m.id}>
+                        <span>{m.label}</span>
+                        <strong>{m.target}</strong>
+                      </li>
+                    ))}
+                  </ul>
                   <div className="rc-card__cap">
                     <h4>
                       <Leaf size={13} /> Evaluate

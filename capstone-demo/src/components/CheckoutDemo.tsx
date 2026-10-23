@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { DEFAULT_PRODUCT, type Order, type Product } from '../data';
 import { api, type Health, type PlacedOrder } from '../api';
 import { DemoHeader, ProductThumb, ProveCards } from './Common';
+import { MetricsCard } from '../metrics';
 
 interface Props {
   live: Health | null;
@@ -402,9 +403,12 @@ export default function CheckoutDemo({ live, product, order, onPlace, onBack, on
         </section>
       </div>
 
-      <ProveCards
-        demonstrates={['Checkout request path', 'Sharding & replica-set roles', 'Order state carried to Europe']}
-      />
+      <div className="prove-grid">
+        <ProveCards
+          demonstrates={['Checkout request path', 'Sharding & replica-set roles', 'Order state carried to Europe']}
+        />
+        <MetricsCard rc={2} />
+      </div>
     </div>
   );
 }

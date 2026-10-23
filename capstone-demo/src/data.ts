@@ -170,7 +170,7 @@ function categoryIntent(terms: string[]): Product['category'] | null {
 
 export const TABS: { id: TabId; label: string; step: string; rc?: 1 | 2 | 3 }[] = [
   { id: 'overview', label: 'Trendify 3.0', step: 'Context' },
-  { id: 'search', label: 'Search & recommendations', step: 'Discover', rc: 1 },
+  { id: 'search', label: 'Real-time recommendations', step: 'Discover', rc: 1 },
   { id: 'checkout', label: 'Flash-sale checkout', step: 'Checkout', rc: 2 },
   { id: 'europe', label: 'Europe data placement', step: 'Europe', rc: 3 },
 ];
@@ -178,17 +178,17 @@ export const TABS: { id: TabId; label: string; step: string; rc?: 1 | 2 | 3 }[] 
 export const RCS = [
   {
     n: 1 as const,
-    short: 'Search & recommendations',
+    short: 'Real-time recommendations',
     statement:
-      'Power product discovery and recommendations from current operational data, with less separate search and retrieval infrastructure to synchronize.',
+      'When a shopper acts, the next recommendations should already reflect it — and never suggest something we can’t sell.',
     evidence: [
-      'Product search runs on Elasticsearch',
-      'Python/TensorFlow recommendations query a PostgreSQL analytics database',
-      'Recommendations are slow to update',
+      'Recommendations take too long to update',
+      'TensorFlow engine reads a PostgreSQL analytics copy',
+      'Search runs on a separate Elasticsearch',
     ],
-    consequence: 'Lower engagement & AOV',
-    capability: 'Atlas Search + Atlas Vector Search',
-    stillNeeded: ['Freshness', 'Relevance', 'Latency baseline', 'TensorFlow fit'],
+    consequence: 'Irrelevant suggestions, lower AOV & engagement',
+    capability: 'Atlas Vector Search on live operational data',
+    stillNeeded: ['Freshness target', 'Recommendation quality', 'TensorFlow fit', 'Latency baseline'],
   },
   {
     n: 2 as const,
@@ -248,25 +248,25 @@ export const NOTES: Record<TabId | 'recap', Notes> = {
   search: {
     time: '10–18 min · target 8 min',
     open:
-      'The scenario describes recommendations querying a PostgreSQL analytics database while product search is in Elasticsearch, and recommendation updates are too slow.',
+      'The scenario says recommendations take too long to update: the TensorFlow engine reads a PostgreSQL analytics copy, so suggestions lag what the shopper is doing.',
     action:
-      'Run the example query, apply one filter, open a product, and add it to the shared shopper journey. Atlas Search and Vector Search are capabilities to evaluate — not a promise to replace Elasticsearch.',
+      'Run the example query, then open Aero Knit Sneaker and watch “Recommended for you” change; open Packable Rain Shell and watch it change again. Open Riviera Slip-On and add it to the journey. Click Validate on Trendify targets. After the flash sale, come back: Riviera is gone from recs.',
     prompts: [
-      'How current do product, inventory, and user signals need to be?',
-      'How do you measure relevance today?',
+      'How current do product, inventory, and shopper signals need to be for a recommendation to be useful?',
+      'How do you measure recommendation quality today?',
       'Which system is authoritative for each field?',
     ],
     transition: 'That product is now in the shopper’s cart. Let’s take it into a flash sale.',
-    proves: 'The shape of a retrieval pattern over operational data.',
-    doesNotProve: 'Trendify’s index freshness, relevance, latency, conversion, or AOV impact.',
-    close: 'This illustrates a retrieval pattern; it does not prove Trendify’s freshness, relevance, or business outcomes.',
+    proves: 'Recommendations recomputed from the latest view and live stock, on operational data.',
+    doesNotProve: 'Trendify’s recommendation quality, freshness target, latency, conversion, or AOV impact.',
+    close: 'This doesn’t replace your TensorFlow models — it shows the fresh data and retrieval they could build on.',
   },
   checkout: {
     time: '18–26 min · target 8 min',
     open:
       'The scenario reports checkout latency spikes during flash sales, with cart abandonment as a direct business consequence.',
     action:
-      'Pick a low-stock item (e.g. Riviera Slip-On, qty 3). Switch to Flash sale and run it: 20 shoppers buy at once, only as many orders as stock commit — no oversell. Point to the shards that stored them. Live mode only; Reset journey restores stock. The demo shard key is not a recommendation for Trendify. Mention the 15–20% abandonment aspiration only as something to validate.',
+      'Click Validate on Trendify targets. Pick a low-stock item (e.g. Riviera Slip-On, qty 3). Switch to Flash sale and run it: 20 shoppers buy at once, only as many orders as stock commit — no oversell. Point to the shards that stored them. Live mode only; Reset journey restores stock. The demo shard key is not a recommendation for Trendify. Mention the 15–20% abandonment aspiration only as something to validate.',
     prompts: [
       'How is RDS PostgreSQL scaled today?',
       'What consistency is required across cart, order, and inventory?',
@@ -282,7 +282,7 @@ export const NOTES: Record<TabId | 'recap', Notes> = {
     open:
       'As Trendify expands into Europe, the scenario calls out both multi-region performance strain and GDPR workflow pressure.',
     action:
-      'Select Europe, inspect the conceptual regional placement, and point to the zone / data-locality idea. Backups, logs, analytics, and search indexes need their own placement decisions.',
+      'Select Europe, inspect the conceptual regional placement, and point to the zone / data-locality idea. Backups, logs, analytics, and search indexes need their own placement decisions. Click Validate on Trendify targets.',
     prompts: [
       'Which data must remain in-region?',
       'Where do reads and writes originate?',
@@ -298,7 +298,7 @@ export const NOTES: Record<TabId | 'recap', Notes> = {
     time: '33–40 min · target 7 min',
     open:
       'We followed one shopper from discovery to checkout to a European order. Each step maps to a proposed RC—and each still needs evidence.',
-    action: 'Walk the three recap rows, park cross-cutting topics, then the next-step checklist.',
+    action: 'Click Validate all (≈15 s) and talk over it; walk the three rows and their targets, park cross-cutting topics, then the next-step checklist. Numbers are measured from this laptop over the internet on synthetic data.',
     prompts: ['Who should own validation for each RC?', 'Which baselines can we get first?'],
     transition: 'Agree owners and dates; close.',
     proves: 'A shared list of what must be validated.',

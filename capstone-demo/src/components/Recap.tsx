@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { RCS } from '../data';
 import type { Journey } from '../App';
 import { RcBadge } from './Common';
+import { METRICS, MetricStatus, useMetrics } from '../metrics';
 
 const NEXT = [
   'Validate workload patterns',
@@ -14,6 +15,9 @@ const PARKING = ['Inventory / fulfillment', 'Microservices & release velocity', 
 
 export default function Recap({ onReset, journey }: { onReset: () => void; journey: Journey }) {
   const [checked, setChecked] = useState<boolean[]>(NEXT.map(() => false));
+  const { live, busy, run, results } = useMetrics();
+  const passed = METRICS.filter((m) => results[m.id]?.pass).length;
+  const measured = METRICS.filter((m) => results[m.id]).length;
 
   return (
     <div className="demo recap fade-in">
@@ -33,7 +37,7 @@ export default function Recap({ onReset, journey }: { onReset: () => void; journ
         <span className="connect__label">How it connects · conceptual</span>
         <ol className="connect__flow">
           <li>
-            <RcBadge n={1} /> Product data → search &amp; vector retrieval
+            <RcBadge n={1} /> Shopper events → session profile → vector recs
           </li>
           <li>
             <RcBadge n={2} /> Orders → sharded, replicated
@@ -49,7 +53,17 @@ export default function Recap({ onReset, journey }: { onReset: () => void; journ
         <div className="recap-row recap-row--head" role="row">
           <span role="columnheader">Proposed RC</span>
           <span role="columnheader">Consequence</span>
-          <span role="columnheader">Evidence needed</span>
+          <span role="columnheader" className="recap-row__targets-head">
+            Targets
+            {measured > 0 && (
+              <span className="muted">
+                {passed}/{METRICS.length} met
+              </span>
+            )}
+            <button className="btn btn--primary btn--sm" disabled={!live || busy.all} onClick={() => run('all')}>
+              {busy.all ? 'Validating…' : 'Validate all'}
+            </button>
+          </span>
         </div>
         {RCS.map((r) => (
           <div className="recap-row" role="row" key={r.n}>
@@ -58,9 +72,14 @@ export default function Recap({ onReset, journey }: { onReset: () => void; journ
             </span>
             <span role="cell">{r.consequence}</span>
             <span role="cell">
-              <ul className="chips chips--sm">
-                {r.stillNeeded.map((x) => (
-                  <li key={x}>{x}</li>
+              <ul className="recap-metrics">
+                {METRICS.filter((m) => m.rc === r.n).map((m) => (
+                  <li key={m.id}>
+                    <span>
+                      {m.label} <span className="muted">{m.target}</span>
+                    </span>
+                    <MetricStatus id={m.id} />
+                  </li>
                 ))}
               </ul>
             </span>

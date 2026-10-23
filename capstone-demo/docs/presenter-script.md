@@ -29,7 +29,7 @@ Use the spoken lines as a guide, not a memorized monologue. Demo actions are par
 
 *Pause briefly, then continue without assuming an answer.*
 
-"The purpose of this Technical Feasibility Workshop is to assess whether the proposed architecture can meet Trendify's technical requirements for Trendify 3.0 and surface feasibility risks early. I've proposed three Required Capabilities: current product discovery and recommendations, responsive checkout through flash-sale peaks, and deliberate regional data placement for Europe. For each, we'll do a short show-and-tell on a live Atlas cluster with synthetic data, connect it to the business reason, and identify the evidence needed to assess feasibility."
+"The purpose of this Technical Feasibility Workshop is to assess whether the proposed architecture can meet Trendify's technical requirements for Trendify 3.0 and surface feasibility risks early. I've proposed three Required Capabilities: recommendations that react in real time, responsive checkout through flash-sale peaks, and deliberate regional data placement for Europe. For each, we'll do a short show-and-tell on a live Atlas cluster with synthetic data, connect it to the business reason, and identify the evidence needed to assess feasibility."
 
 **Transition:** "I'll start by replaying the before-state and why these priorities matter now."
 
@@ -59,9 +59,9 @@ Use the spoken lines as a guide, not a memorized monologue. Demo actions are par
 
 **Say:**
 
-"I've kept the scope to three proposed RCs — labeled *hypotheses, metrics TBD* — because these map to Trendify's most differentiated needs:
+"I've kept the scope to three proposed RCs — each with the targets you gave us — because these map to Trendify's most differentiated needs:
 
-"One: power product discovery and recommendations from current operational data, with less separate search and retrieval infrastructure to synchronize. To evaluate: Atlas Search and Atlas Vector Search.
+"One: when a shopper acts, the next recommendations should already reflect it — and never suggest something we can't sell. To evaluate: Atlas Vector Search on live operational data.
 
 "Two: scale checkout and related operational workloads through peak events while meeting the required availability and consistency. To evaluate: sharding and replica sets.
 
@@ -79,39 +79,52 @@ Use the spoken lines as a guide, not a memorized monologue. Demo actions are par
 
 **Say (~45 s):**
 
-"Before the demos, a quick look at what we prepared. This is a live Atlas cluster with synthetic data. For RC 1, a small product catalog with embeddings and both Atlas Search and Vector Search indexes. For RC 2, order data sharded across replica sets, with order and inventory updated in one transaction. For RC 3, a Global Cluster with two zones — US East and Ireland — and location mappings that decide where each order lives. It's sized to demonstrate the patterns, not Trendify's workload."
+"Before the demos, a quick look at what we prepared. This is a live Atlas cluster with synthetic data. For RC 1, a small product catalog with embeddings, and shopper events that update a session profile used for vector-based recommendations. For RC 2, order data sharded across replica sets, with order and inventory updated in one transaction. For RC 3, a Global Cluster with two zones — US East and Ireland — and location mappings that decide where each order lives. It's sized to demonstrate the patterns, not Trendify's workload."
 
 **Click:** **Start → Discover**.
 
-**Transition:** "I'll start with the customer experience that differentiates Trendify: product discovery."
+**Transition:** "I'll start with the customer experience that differentiates Trendify: personalized recommendations."
 
 ---
 
-## 10:00–18:00 | RC 1 — Integrated search and vector retrieval
+## 10:00–18:00 | RC 1 — Real-time recommendations
 
-**On screen:** Tab **Search & recommendations** — ribbon step *Discover · RC 1* lit; storefront tag **Live · Atlas Vector Search**.
+**On screen:** Tab **Real-time recommendations** — ribbon step *Discover · RC 1* lit; storefront on the left, **Product detail** and **Recommended for you** on the right.
 
 ### 10:00–12:00 | Set up the problem
 
-"The current-state brief says the recommendation engine queries a PostgreSQL analytics database, while product search uses Elasticsearch, and recommendations take too long to update. The consequence is weaker engagement and AOV, and slower adoption of AI campaigns. The RC on screen is our hypothesis, not a customer quote."
+"The scenario says product recommendations take too long to update in real time. The TensorFlow engine reads a PostgreSQL analytics copy, so suggestions lag what the shopper is actually doing. The consequences are irrelevant suggestions, lower AOV and engagement, and slower adoption of AI-driven campaigns. The RC on screen is our hypothesis in your words: when a shopper acts, the next recommendations should already reflect it — and never suggest something we can't sell."
 
 ### 12:00–16:00 | Demo
 
-1. **Click Run semantic query** (prefilled: *comfortable shoes for a summer city trip*).
-   "This is a real Atlas Vector Search query against an eight-item synthetic catalog. The three shoes come back on meaning — the query doesn't need to match their exact words."
-2. **Toggle In stock only.** The Trailline Leather Sandal disappears.
-   "Availability is a field on the same operational document, so the semantic query and the stock filter run together."
-3. *(Optional, 20 s)* **Switch to Keyword · Atlas Search** and run again.
-   "Same data, full-text relevance instead of vectors — both indexes live alongside the operational data."
-4. **Open Riviera Canvas Slip-On.** Point to category, description, and **Low stock**.
-   "These are the fields the application uses for the result and the filter."
-5. **Click Add to shopper journey.** The ribbon shows it in the cart.
+1. **Point to Recommended for you** (cold start: *Open a product to personalize*).
+2. **Click Run semantic query** (prefilled: *comfortable shoes for a summer city trip*).
+   "Search is the entry point — a real Atlas Vector Search query over the same product data."
+3. **Open Aero Knit City Sneaker.** The panel switches to *Based on Aero Knit City Sneaker* and new items.
+   "That view was written to Atlas as an event, the shopper's session profile was updated, and the recommendations were recomputed with Vector Search — on the click, not in a nightly batch."
+4. **Open one of the recommended items** (e.g. Packable Rain Shell). The recommendations change again.
+   "Each click shifts the profile toward what the shopper just looked at."
+5. Point to the stock labels.
+   "Out-of-stock items are filtered in the same query, so we never recommend something we can't sell."
+6. **Open Riviera Canvas Slip-On** and **click Add to shopper journey**.
 
-"This illustrates the retrieval pattern and how semantic relevance can be combined with product attributes. It does not prove Trendify's required freshness, recommendation quality, conversion lift, or that Elasticsearch should be removed. Those need a representative workload and agreed success criteria."
+"This doesn't replace your TensorFlow models — it shows the fresh behavior and inventory data, and the retrieval, they could build on. It does not prove Trendify's recommendation quality, freshness target, or conversion lift; those need a representative workload and agreed success criteria."
+
+*Callback for later: after the flash sale in RC 2, return to this tab — Riviera is out of stock and has dropped out of the recommendations.*
+
+### ~15:30 | Validate against Trendify's targets
+
+**Click Validate** on the *Trendify targets* card (bottom right). It takes a few seconds.
+
+"These are the targets you set for this capability: recommendations reflect the last click within two seconds, zero out-of-stock items recommended, and semantic search within one second. The check runs live against the cluster with its own test session and cleans up after itself."
+
+Read the three results (typical: ~1.1 s, 0 items, ~0.5 s — all ✓).
+
+*Numbers are measured from the demo API on the presenter's laptop to Atlas over the internet, with synthetic data — in-region they would be lower. Present them as evidence for the targets on this demo, not as production sizing.*
 
 ### 16:00–18:00 | Discovery and RC capture
 
-"To make 'real time' concrete: how current do product, inventory, and user signals need to be for a recommendation to be useful? Which system is authoritative for each field? And how do you measure relevance today?"
+"To make 'real time' concrete: how current do product, inventory, and shopper signals need to be for a recommendation to be useful? How do you measure recommendation quality today? And which system is authoritative for each field?"
 
 **Click:** **Continue to checkout →**.
 
@@ -137,6 +150,18 @@ Use the spoken lines as a guide, not a memorized monologue. Demo actions are par
    "Three committed, seventeen rejected, stock three to zero — no oversell. And the orders landed on both shards, US shoppers in us-east-1 and German shoppers in eu-west-1."
 
 "What this shows is consistency under concurrency on a sharded cluster. It is not a load test: twenty requests say nothing about Black Friday throughput, p95/p99 latency, or failover behavior. Those need a controlled test against Trendify's profile."
+
+### ~23:30 | Validate against Trendify's targets
+
+**Click Validate** on the *Trendify targets* card.
+
+"Your targets: twenty concurrent checkouts on one item complete in under three seconds, no oversell, and peak load spread across shards. The check fires twenty real checkouts against a three-unit test item, then ten normal orders from US and German shoppers."
+
+Read the results (typical: ~1.8–2.6 s, 3 orders for 3 units, 2 shards — all ✓).
+
+*Numbers are measured from the demo API on the presenter's laptop to Atlas over the internet, with synthetic data — in-region they would be lower. Present them as evidence for the targets on this demo, not as production sizing.*
+
+*If asked about bigger drops: when ten or more units sell into the same item at once, each winning transaction waits its turn on that product document, and from this laptop the burst grows to ~5 s. That hot-item contention, measured in-region, is exactly what a technical validation should size.*
 
 ### 24:00–26:00 | Discovery and RC capture
 
@@ -164,6 +189,16 @@ Use the spoken lines as a guide, not a memorized monologue. Demo actions are par
 3. **Click North America.** It moves back to Zone 1 · us-east-1.
    "Here I'm moving an existing order to make the mechanism visible. In practice, location would be set when the record is written."
 
+### ~30:30 | Validate against Trendify's targets
+
+**Click Validate** on the *Trendify targets* card.
+
+"Your targets: every order stored in its country's zone, a regional query touching only that region, and a region change reflected within two seconds. The check reads placement back from the cluster for every order."
+
+Read the results (typical: 100%, 1 shard, ~1 s — all ✓).
+
+*Numbers are measured from the demo API on the presenter's laptop to Atlas over the internet, with synthetic data — in-region they would be lower. Present them as evidence for the targets on this demo, not as production sizing.*
+
 ### 31:00–33:00 | Discovery and RC capture
 
 "Which data must remain in-region? Where do writes originate, what cross-region access is permitted, and what regional latency and recovery objectives matter? We should also confirm the search and retrieval deployment fits the regional architecture."
@@ -176,11 +211,11 @@ Use the spoken lines as a guide, not a memorized monologue. Demo actions are par
 
 ## 33:00–37:00 | Cross-cutting topics and Parking Lot
 
-**On screen:** **Recap** panel — *How it connects* strip (RC 1 → search & vector, RC 2 → sharded & replicated, RC 3 → zones) and the **Parking lot** card.
+**On screen:** **Recap** panel — *How it connects* strip (RC 1 → events, session profile, vector recs, RC 2 → sharded & replicated, RC 3 → zones) and the **Parking lot** card.
 
 **Say:**
 
-"This strip is how the three connect: product data feeding search and vector retrieval, orders on a sharded, replicated cluster, and regional data placed by zone — a hypothesis to test, not a decided architecture.
+"This strip is how the three connect: shopper events updating a profile that drives vector recommendations, orders on a sharded, replicated cluster, and regional data placed by zone — a hypothesis to test, not a decided architecture.
 
 "Inventory freshness sits inside the recommendation and checkout path, so we traced it there — you saw stock drive both the search filter and the flash sale. A deeper ERP and fulfillment redesign, the microservices migration plan, and AWS implementation and pricing are in the Parking Lot for follow-up.
 
@@ -190,11 +225,15 @@ Use the spoken lines as a guide, not a memorized monologue. Demo actions are par
 
 ## 37:00–40:00 | Playback, next steps, and close
 
-**On screen:** Same panel — RC table (*Proposed RC · Consequence · Evidence needed*) and the **Next-step checklist**.
+**On screen:** Same panel — RC table (*Proposed RC · Consequence · Targets*) and the **Next-step checklist**.
+
+**Click Validate all** in the table header. The nine targets fill in with ✓ and the header shows *9/9 met* (~15 s; talk over it).
 
 **Say:**
 
-"To summarize: current operational data for search and recommendations, because stale results can reduce engagement and AOV; checkout scale and consistency, because flash-sale latency contributes to abandoned carts; and regional data placement, because Europe expansion raises performance and compliance-workflow concerns. Is there anything you would change in that wording or order?
+"To summarize: real-time recommendations, because suggestions that lag the shopper reduce engagement and AOV; checkout scale and consistency, because flash-sale latency contributes to abandoned carts; and regional data placement, because Europe expansion raises performance and compliance-workflow concerns. Is there anything you would change in that wording or order?
+
+"On this demo environment, all nine targets you gave us were met. The next step is to rerun the same checks against your workload profile, in-region, to confirm them at Trendify's scale."
 
 "For next steps" — point to the checklist — "validate workload patterns, agree baselines and success measures, confirm architecture and residency constraints with security and legal, and assign owners and dates. A proof of concept is worth considering only where a critical capability can't be validated through discussion or a demonstration like today's."
 

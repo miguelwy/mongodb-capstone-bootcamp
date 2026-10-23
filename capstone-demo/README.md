@@ -13,9 +13,9 @@ Live mode needs `atlas/.env` (see `atlas/README.md` for cluster setup and seed d
 
 | Tab | Live behavior |
 |---|---|
-| Search | Atlas Vector Search (semantic) or Atlas Search (keyword), real stock levels |
+| Real-time recommendations | Product views update a session profile → Vector Search recs (no out-of-stock); search via Vector Search or Atlas Search |
 | Checkout | Order + inventory decrement in one transaction; shard shown from `explain()` |
 | Europe | Region switch updates `location` (shard key) → Atlas moves the order to that zone |
-| Reset journey | Restores seed stock and deletes `LIVE-*` orders |
+| Reset journey | Restores seed stock, deletes `LIVE-*` orders, events and sessions |
 
 - Tabs: ← / → / Home / End on a focused tab. Press N for presenter notes; "Close & recap" works on every tab.

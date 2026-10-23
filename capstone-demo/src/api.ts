@@ -49,6 +49,20 @@ export interface FlashSaleResult {
   byZone: Record<string, number>;
 }
 
+export interface Recs {
+  mode: 'cold' | 'personalized';
+  basedOn: string[];
+  results: LiveHit[];
+}
+
+export interface MetricCheck {
+  id: string;
+  value: number;
+  unit: string;
+  pass: boolean;
+  detail: string;
+}
+
 export const api = {
   health: () => call<Health>('/health'),
   search: (q: string, opts: { category?: string; inStock?: boolean; mode?: 'vector' | 'text' }) => {
@@ -66,6 +80,9 @@ export const api = {
     if (opts.inStock) p.set('inStock', '1');
     return call<{ engine: string; results: LiveHit[] }>(`/products?${p}`);
   },
+  recs: (sessionId: string) => call<Recs>(`/recs?sessionId=${encodeURIComponent(sessionId)}`),
+  view: (sessionId: string, productId: string) =>
+    call<Recs>('/events', { method: 'POST', body: JSON.stringify({ sessionId, productId }) }),
   product: (id: string) => call<{ qty: number; stock: LiveHit['stock'] }>(`/products/${id}`),
   flashSale: (productId: string, buyers = 20) =>
     call<FlashSaleResult>('/flash-sale', { method: 'POST', body: JSON.stringify({ productId, buyers }) }),
@@ -74,5 +91,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ region }),
     }),
+  metrics: (rc: 1 | 2 | 3 | 'all') =>
+    call<{ at: string; checks: MetricCheck[] }>('/metrics', { method: 'POST', body: JSON.stringify({ rc }) }),
   reset: () => call<{ ok: boolean; deletedOrders: number }>('/reset', { method: 'POST' }),
 };

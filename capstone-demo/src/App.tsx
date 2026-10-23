@@ -3,6 +3,7 @@ import { TABS, type Order, type Product, type Region, type TabId } from './data'
 import { NotesPanel } from './components/Common';
 import { api, type Health } from './api';
 import mongodbLogo from './assets/mongodb-logo.svg';
+import { MetricsProvider } from './metrics';
 import Overview from './components/Overview';
 import SearchDemo from './components/SearchDemo';
 import CheckoutDemo from './components/CheckoutDemo';
@@ -16,6 +17,7 @@ export interface Journey {
 }
 
 const EMPTY: Journey = { product: null, order: null, region: null };
+const newSessionId = () => `s-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 const STEPS: { tab: TabId; label: string; rc: 1 | 2 | 3 }[] = [
   { tab: 'search', label: 'Discover', rc: 1 },
   { tab: 'checkout', label: 'Checkout', rc: 2 },
@@ -29,6 +31,9 @@ export default function App() {
   const [recapOpen, setRecapOpen] = useState(false);
   const [live, setLive] = useState<Health | null>(null);
   const [regionBusy, setRegionBusy] = useState(false);
+  // One shopper session per journey: drives the real-time recommendations.
+  const [sessionId, setSessionId] = useState(newSessionId);
+  const [viewed, setViewed] = useState<string[]>([]);
   const [regionError, setRegionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,6 +52,8 @@ export default function App() {
   const reset = () => {
     if (live) api.reset().catch(() => {});
     setRegionError(null);
+    setSessionId(newSessionId());
+    setViewed([]);
     setJourney(EMPTY);
     setRecapOpen(false);
     setTab('search');
@@ -82,6 +89,7 @@ export default function App() {
     (s === 'europe' && !!journey.region);
 
   return (
+    <MetricsProvider live={live}>
     <div className={`app ${notesOpen ? 'has-notes' : ''}`}>
       <a href="#main" className="skip">
         Skip to content
@@ -186,6 +194,9 @@ export default function App() {
               {tab === 'search' && (
                 <SearchDemo
                   live={live}
+                  sessionId={sessionId}
+                  viewed={viewed}
+                  onView={(id) => setViewed((v) => [...v.filter((x) => x !== id), id])}
                   journeyProduct={journey.product}
                   onAdd={(p) => setJourney({ product: p, order: null, region: null })}
                   onNext={() => go('checkout')}
@@ -249,5 +260,6 @@ export default function App() {
         )}
       </footer>
     </div>
+    </MetricsProvider>
   );
 }

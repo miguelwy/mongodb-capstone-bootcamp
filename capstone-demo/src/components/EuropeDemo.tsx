@@ -1,6 +1,7 @@
 import type { Order, Region } from '../data';
 import type { Health } from '../api';
 import { DemoHeader, Leaf, ProductThumb, ProveCards } from './Common';
+import { MetricsCard } from '../metrics';
 
 interface Props {
   live: Health | null;
@@ -129,9 +130,12 @@ export default function EuropeDemo({ live, busy, error, order, region, onRegion,
         </div>
       </div>
 
-      <ProveCards
-        demonstrates={['Order tagged with a region', 'In-region reads & writes via zones', 'One journey, end to end']}
-      />
+      <div className="prove-grid">
+        <ProveCards
+          demonstrates={['Order tagged with a region', 'In-region reads & writes via zones', 'One journey, end to end']}
+        />
+        <MetricsCard rc={3} />
+      </div>
 
       <div className="cta-row">
         <button className="btn btn--primary" onClick={onRecap}>

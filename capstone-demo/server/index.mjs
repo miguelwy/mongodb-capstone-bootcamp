@@ -9,11 +9,13 @@ const PORT = Number(process.env.PORT ?? 8787);
 const DB = 'trendify_demo';
 const CUSTOMER = { US: 'c-na-001', DE: 'c-eu-001' };
 
-const client = new MongoClient(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 15000 });
+const client = new MongoClient(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 15000, minPoolSize: 25 });
 await client.connect();
 const db = client.db(DB);
 const products = db.collection('products');
 const orders = db.collection('orders');
+const events = db.collection('events');
+const sessions = db.collection('sessions');
 
 const stockLabel = (qty) => (qty === 0 ? 'Out of stock' : qty <= 5 ? 'Low stock' : 'In stock');
 const REGION_NAME = { US_EAST_1: 'us-east-1', EU_WEST_1: 'eu-west-1', EU_CENTRAL_1: 'eu-central-1' };
@@ -123,6 +125,24 @@ async function search({ q, category, inStock, mode }) {
   return { engine: useVector ? 'Atlas Vector Search' : 'Atlas Search', results: kept };
 }
 
+// Decrement qty and recompute the stock label in one atomic pipeline update.
+const STOCK_DECREMENT = [
+  { $set: { qty: { $subtract: ['$qty', 1] }, updatedAt: '$$NOW' } },
+  {
+    $set: {
+      stock: {
+        $switch: {
+          branches: [
+            { case: { $lte: ['$qty', 0] }, then: 'Out of stock' },
+            { case: { $lte: ['$qty', 5] }, then: 'Low stock' },
+          ],
+          default: 'In stock',
+        },
+      },
+    },
+  },
+];
+
 async function placeOrder({ productId, location = 'US' }) {
   const customerId = CUSTOMER[location] ?? CUSTOMER.US;
   const session = client.startSession();
@@ -131,11 +151,10 @@ async function placeOrder({ productId, location = 'US' }) {
     await session.withTransaction(async () => {
       const p = await products.findOneAndUpdate(
         { _id: productId, qty: { $gte: 1 } },
-        { $inc: { qty: -1 } },
-        { session, returnDocument: 'after' },
+        STOCK_DECREMENT,
+        { session, returnDocument: 'after', projection: { qty: 1, price: 1 } },
       );
       if (!p) throw Object.assign(new Error('Out of stock — transaction aborted'), { status: 409 });
-      await products.updateOne({ _id: productId }, { $set: { stock: stockLabel(p.qty), updatedAt: new Date() } }, { session });
       order = {
         location,
         customerId,
@@ -208,6 +227,186 @@ async function setRegion(orderId, region) {
   return { orderId, location, placement };
 }
 
+// ---------- Real-time recommendations (RC 1) ----------
+// Each product view is an event. The session profile is the recency-weighted mean of the
+// embeddings of the last viewed products, so the next recommendation reflects the last click.
+const PROFILE_WINDOW = 5;
+
+async function recommend(sessionId, known) {
+  const session = known ?? (sessionId ? await sessions.findOne({ _id: sessionId }) : null);
+  const viewed = session?.viewed ?? [];
+  const inStock = { stock: { $ne: 'Out of stock' } };
+  if (!session?.profile) {
+    // Cold start: nothing viewed yet, so show well-stocked items.
+    const docs = await products.find(inStock, { projection: { qty: 1, stock: 1 } }).sort({ qty: -1 }).limit(3).toArray();
+    return { mode: 'cold', basedOn: [], results: docs.map((d) => ({ id: d._id, qty: d.qty, stock: d.stock, score: 0 })) };
+  }
+  const docs = await products
+    .aggregate([
+      {
+        $vectorSearch: {
+          index: 'products_vec',
+          path: 'embedding',
+          queryVector: session.profile,
+          numCandidates: 50,
+          limit: 8,
+          filter: inStock,
+        },
+      },
+      { $set: { score: { $meta: 'vectorSearchScore' } } },
+      { $match: { _id: { $nin: viewed } } },
+      { $limit: 3 },
+      { $project: { qty: 1, stock: 1, score: 1 } },
+    ])
+    .toArray();
+  return {
+    mode: 'personalized',
+    basedOn: viewed.slice(-PROFILE_WINDOW).reverse(),
+    results: docs.map((d) => ({ id: d._id, qty: d.qty, stock: d.stock, score: d.score })),
+  };
+}
+
+async function recordView(sessionId, productId) {
+  // The event write and the session read are independent, so they run in parallel.
+  const [, prevSession] = await Promise.all([
+    events.insertOne({ sessionId, productId, type: 'view', at: new Date() }),
+    sessions.findOne({ _id: sessionId }, { projection: { viewed: 1 } }),
+  ]);
+  const prev = prevSession?.viewed ?? [];
+  const viewed = [...prev.filter((id) => id !== productId), productId];
+  const recent = viewed.slice(-PROFILE_WINDOW);
+  const vecs = await products.find({ _id: { $in: recent } }, { projection: { embedding: 1 } }).toArray();
+  const byId = new Map(vecs.filter((v) => v.embedding).map((v) => [v._id, v.embedding]));
+  // Newer views weigh more: weight doubles with each newer view, so the last click leads.
+  let profile = null;
+  let total = 0;
+  recent.forEach((id, i) => {
+    const e = byId.get(id);
+    if (!e) return;
+    const w = 2 ** i;
+    profile = profile ? profile.map((x, k) => x + e[k] * w) : e.map((x) => x * w);
+    total += w;
+  });
+  if (profile) profile = profile.map((x) => x / total);
+  // Persist the profile and compute recommendations from it at the same time.
+  const [, recs] = await Promise.all([
+    sessions.updateOne({ _id: sessionId }, { $set: { viewed, profile, updatedAt: new Date() } }, { upsert: true }),
+    recommend(sessionId, { viewed, profile }),
+  ]);
+  return recs;
+}
+
+// ---------- Success-metric validation ----------
+// Each check runs against the live cluster with its own throwaway data (test product, session,
+// order) and cleans up after itself, so it never changes the demo state.
+const ms = (t0) => Math.round(performance.now() - t0);
+const regionOf = (loc) => (['DE', 'FR', 'IE'].includes(loc) ? 'eu' : 'na');
+const isRegion = (region, placement) => (region === 'eu') === placement.region.startsWith('eu');
+
+async function validateRc1() {
+  const sid = `metrics-${Date.now().toString(36)}`;
+  const views = ['p1', 'p5', 'p6', 'p4', 'p8'];
+  const times = [];
+  let outOfStock = 0;
+  for (const id of views) {
+    const t0 = performance.now();
+    const r = await recordView(sid, id);
+    times.push(ms(t0));
+    outOfStock += r.results.filter((x) => x.stock === 'Out of stock').length;
+  }
+  const queries = ['comfortable shoes for a summer city trip', 'something light for rainy days', 'bag for a weekend away', 'summer accessories', 'breathable shirt'];
+  const searchTimes = [];
+  for (const q of queries) {
+    const t0 = performance.now();
+    await search({ q, category: null, inStock: true, mode: 'vector' });
+    searchTimes.push(ms(t0));
+  }
+  await Promise.all([events.deleteMany({ sessionId: sid }), sessions.deleteOne({ _id: sid })]);
+  const worst = Math.max(...times);
+  const worstSearch = Math.max(...searchTimes);
+  return [
+    { id: 'rc1-fresh', value: worst, unit: 'ms', pass: worst <= 2000, detail: `${views.length} views · ${times.join(' / ')} ms` },
+    { id: 'rc1-oos', value: outOfStock, unit: 'items', pass: outOfStock === 0, detail: `${views.length} recommendation sets checked` },
+    { id: 'rc1-search', value: worstSearch, unit: 'ms', pass: worstSearch <= 1000, detail: `${queries.length} queries · ${searchTimes.join(' / ')} ms` },
+  ];
+}
+
+async function validateRc2() {
+  const pid = `mtest-${Date.now().toString(36)}`;
+  const stockQty = 3;
+  await products.insertOne({ _id: pid, name: 'Metrics test item', category: 'Test', price: 1, qty: stockQty, stock: 'Low stock' });
+  try {
+    const t0 = performance.now();
+    const results = await Promise.allSettled(
+      Array.from({ length: 20 }, (_, i) => placeOrder({ productId: pid, location: i % 2 ? 'DE' : 'US' })),
+    );
+    const elapsed = ms(t0);
+    const ok = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+    const end = (await products.findOne({ _id: pid }, { projection: { qty: 1 } })).qty;
+    // Spread is measured on normal load (well-stocked item, US + DE shoppers), not the hot item.
+    const spreadPid = `${pid}-spread`;
+    await products.insertOne({ _id: spreadPid, name: 'Metrics spread item', category: 'Test', price: 1, qty: 100, stock: 'In stock' });
+    const spread = await Promise.all(
+      Array.from({ length: 10 }, (_, i) => placeOrder({ productId: spreadPid, location: i % 2 ? 'DE' : 'US' })),
+    );
+    const shards = new Set(spread.map((o) => o.placement.shard));
+    return [
+      { id: 'rc2-burst', value: elapsed, unit: 'ms', pass: elapsed < 3000, detail: `20 concurrent checkouts · ${ok.length} committed` },
+      {
+        id: 'rc2-oversell',
+        value: ok.length,
+        unit: 'orders',
+        pass: ok.length === stockQty && end === 0,
+        detail: `stock ${stockQty} → ${end} · ${20 - ok.length} rejected`,
+      },
+      {
+        id: 'rc2-spread',
+        value: shards.size,
+        unit: 'shards',
+        pass: shards.size >= 2,
+        detail: `10 concurrent orders (US + DE) → ${[...shards].map((x) => x.slice(-7)).join(' + ')}`,
+      },
+    ];
+  } finally {
+    await Promise.all([
+      products.deleteMany({ _id: { $in: [pid, `${pid}-spread`] } }),
+      orders.deleteMany({ 'items.productId': { $in: [pid, `${pid}-spread`] } }),
+    ]);
+  }
+}
+
+async function validateRc3() {
+  const all = await orders.find({}, { projection: { location: 1, customerId: 1, orderId: 1 } }).toArray();
+  let correct = 0;
+  for (const o of all) {
+    const pl = await placementOf({ location: o.location, customerId: o.customerId, orderId: o.orderId });
+    if (isRegion(regionOf(o.location), pl)) correct += 1;
+  }
+  const pct = all.length ? Math.round((correct / all.length) * 100) : 0;
+
+  const plan = (await orders.find({ location: 'DE' }).explain('queryPlanner')).queryPlanner;
+  const touched = (plan.winningPlan?.shards ?? plan.shards ?? []).map((x) => x.shardName);
+  const euOnly = touched.length === 1 && isRegion('eu', topology.find((t) => t.shard === touched[0]) ?? { region: '' });
+
+  const orderId = `MTEST-${Date.now().toString(36).toUpperCase()}`;
+  await orders.insertOne({ location: 'US', customerId: CUSTOMER.US, orderId, items: [], total: 0, status: 'test', createdAt: new Date() });
+  let rehome = null;
+  let rehomed = false;
+  try {
+    const t0 = performance.now();
+    const r = await setRegion(orderId, 'eu');
+    rehome = ms(t0);
+    rehomed = isRegion('eu', r.placement);
+  } finally {
+    await orders.deleteMany({ orderId });
+  }
+  return [
+    { id: 'rc3-placement', value: pct, unit: '%', pass: pct === 100, detail: `${correct}/${all.length} orders in their zone` },
+    { id: 'rc3-isolation', value: touched.length, unit: 'shard', pass: euOnly, detail: `DE query → ${touched.map((x) => x.slice(-7)).join(', ') || '—'}` },
+    { id: 'rc3-rehome', value: rehome, unit: 'ms', pass: rehomed && rehome <= 2000, detail: rehomed ? 'US → DE, read back in EU zone' : 'not found in EU zone' },
+  ];
+}
+
 async function reset() {
   await products.bulkWrite(
     seedProducts.map((p) => ({
@@ -215,6 +414,7 @@ async function reset() {
     })),
   );
   const { deletedCount } = await orders.deleteMany({ orderId: /^LIVE-/ });
+  await Promise.all([events.deleteMany({}), sessions.deleteMany({})]);
   return { ok: true, deletedOrders: deletedCount };
 }
 
@@ -250,6 +450,21 @@ http
       }
       if (req.method === 'POST' && url.pathname === '/api/orders') {
         return json(res, 200, await placeOrder(await readBody(req)));
+      }
+      if (req.method === 'POST' && url.pathname === '/api/metrics') {
+        const rc = String((await readBody(req)).rc ?? 'all');
+        const run = { 1: validateRc1, 2: validateRc2, 3: validateRc3 };
+        const checks = [];
+        for (const k of rc === 'all' ? ['1', '2', '3'] : [rc]) checks.push(...(await run[k]()));
+        return json(res, 200, { at: new Date().toISOString(), checks });
+      }
+      if (req.method === 'GET' && url.pathname === '/api/recs') {
+        return json(res, 200, await recommend(url.searchParams.get('sessionId')));
+      }
+      if (req.method === 'POST' && url.pathname === '/api/events') {
+        const { sessionId, productId } = await readBody(req);
+        if (!sessionId || !productId) return json(res, 400, { error: 'sessionId and productId required' });
+        return json(res, 200, await recordView(String(sessionId), String(productId)));
       }
       if (req.method === 'GET' && url.pathname === '/api/products') {
         const filter = {};
