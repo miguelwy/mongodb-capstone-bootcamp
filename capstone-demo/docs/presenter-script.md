@@ -150,7 +150,7 @@ Use the spoken lines as a guide, not a memorized monologue. Demo actions are par
 
 ## 26:00–33:00 | RC 3 — Regional data placement for Europe
 
-**On screen:** Tab **Europe data placement** — GDPR note at the top; **North America (Zone 1 · us-east-1)** and **Europe (Zone 2 · eu-west-1)**; order record panel; *Atlas Global Clusters · To evaluate* card.
+**On screen:** Tab **Europe data placement** — **North America (Zone 1 · us-east-1)** and **Europe (Zone 2 · eu-west-1)**; order record panel; *Atlas Global Clusters · To evaluate* card.
 
 ### 26:00–28:00 | Set up the problem
 
@@ -163,8 +163,6 @@ Use the spoken lines as a guide, not a memorized monologue. Demo actions are par
    "The location is part of the shard key. Atlas maps DE to the European zone, and the cluster moved the document to the shard in Ireland — read back from the database, not drawn."
 3. **Click North America.** It moves back to Zone 1 · us-east-1.
    "Here I'm moving an existing order to make the mechanism visible. In practice, location would be set when the record is written."
-4. Point to the **GDPR note**.
-   "A placement mechanism is not GDPR compliance. Legal and security teams must confirm rules for primary data, replicas, backups, logs, and cross-region access."
 
 ### 31:00–33:00 | Discovery and RC capture
 

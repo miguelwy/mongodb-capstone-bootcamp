@@ -26,10 +26,6 @@ export default function EuropeDemo({ live, busy, error, order, region, onRegion,
     <div className="demo">
       <DemoHeader rc={3} title="Europe data placement" />
 
-      <div className="callout callout--warn" role="note">
-        <strong>Data placement is not a GDPR compliance guarantee.</strong> Confirm residency, replication, backup, logs, and
-        cross-region access rules with security / legal.
-      </div>
 
       <div className="demo-grid demo-grid--europe">
         <section className="panel" aria-labelledby="map-h">
