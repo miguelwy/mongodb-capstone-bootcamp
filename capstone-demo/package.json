@@ -1,0 +1,28 @@
+{
+  "name": "trendify-tfw-demo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "atlas:setup": "node --env-file=atlas/.env atlas/setup.mjs",
+    "atlas:check": "node --env-file=atlas/.env atlas/check.mjs",
+    "api": "node --env-file=atlas/.env server/index.mjs",
+    "dev:live": "concurrently -k -n api,web -c green,cyan \"npm:api\" \"npm:dev\""
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.2.5",
+    "mongodb": "^6.21.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2"
+  }
+}
