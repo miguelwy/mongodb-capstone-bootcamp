@@ -25,14 +25,15 @@ export default function SearchDemo({ live, journeyProduct, onAdd, onNext }: Prop
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Live mode: every query / filter change runs a real Atlas Search or Vector Search query.
+  // Live mode: nothing is filtered in the browser. Without a query the catalog comes from a
+  // MongoDB find() with the filters; with a query, from Atlas Search or Vector Search.
   useEffect(() => {
-    if (!live || query === null) return;
+    if (!live) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
-    api
-      .search(query || 'products', { category: category === 'All' ? undefined : category, inStock: inStockOnly, mode })
+    const filters = { category: category === 'All' ? undefined : category, inStock: inStockOnly };
+    (query === null ? api.catalog(filters) : api.search(query || 'products', { ...filters, mode }))
       .then((r) => {
         if (cancelled) return;
         setLiveRes({ engine: r.engine, hits: r.results });
@@ -48,8 +49,8 @@ export default function SearchDemo({ live, journeyProduct, onAdd, onNext }: Prop
   const withStock = (p: Product): Product => (liveStock[p.id] ? { ...p, stock: liveStock[p.id] } : p);
 
   const results = useMemo(() => {
-    if (live && query !== null && liveRes) {
-      return liveRes.hits.flatMap((h) => {
+    if (live) {
+      return (liveRes?.hits ?? []).flatMap((h) => {
         const p = CATALOG.find((c) => c.id === h.id);
         return p ? [{ product: { ...p, stock: h.stock }, score: h.score }] : [];
       });

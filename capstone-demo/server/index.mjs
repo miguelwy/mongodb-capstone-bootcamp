@@ -251,6 +251,17 @@ http
       if (req.method === 'POST' && url.pathname === '/api/orders') {
         return json(res, 200, await placeOrder(await readBody(req)));
       }
+      if (req.method === 'GET' && url.pathname === '/api/products') {
+        const filter = {};
+        const category = url.searchParams.get('category');
+        if (category) filter.category = category;
+        if (url.searchParams.get('inStock') === '1') filter.stock = { $ne: 'Out of stock' };
+        const docs = await products.find(filter, { projection: { qty: 1, stock: 1 } }).sort({ _id: 1 }).toArray();
+        return json(res, 200, {
+          engine: 'MongoDB find()',
+          results: docs.map((d) => ({ id: d._id, qty: d.qty, stock: d.stock, score: 0 })),
+        });
+      }
       const pm = url.pathname.match(/^\/api\/products\/([\w-]+)$/);
       if (req.method === 'GET' && pm) {
         const p = await products.findOne({ _id: pm[1] }, { projection: { qty: 1, stock: 1 } });

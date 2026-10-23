@@ -60,6 +60,12 @@ export const api = {
   },
   placeOrder: (productId: string, location = 'US') =>
     call<PlacedOrder>('/orders', { method: 'POST', body: JSON.stringify({ productId, location }) }),
+  catalog: (opts: { category?: string; inStock?: boolean }) => {
+    const p = new URLSearchParams();
+    if (opts.category) p.set('category', opts.category);
+    if (opts.inStock) p.set('inStock', '1');
+    return call<{ engine: string; results: LiveHit[] }>(`/products?${p}`);
+  },
   product: (id: string) => call<{ qty: number; stock: LiveHit['stock'] }>(`/products/${id}`),
   flashSale: (productId: string, buyers = 20) =>
     call<FlashSaleResult>('/flash-sale', { method: 'POST', body: JSON.stringify({ productId, buyers }) }),
