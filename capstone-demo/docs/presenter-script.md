@@ -211,7 +211,7 @@ Read the results (typical: 100%, 1 shard, ~1 s — all ✓).
 
 ## 33:00–37:00 | Cross-cutting topics and Parking Lot
 
-**On screen:** **Recap** panel — *How it connects* strip (RC 1 → events, session profile, vector recs, RC 2 → sharded & replicated, RC 3 → zones) and the **Parking lot** card.
+**On screen:** **Recap** panel — *How it connects* strip (RC 1 → events, session profile, vector recs, RC 2 → sharded & replicated, RC 3 → zones). The Parking Lot is spoken, not on screen.
 
 **Say:**
 
@@ -225,7 +225,7 @@ Read the results (typical: 100%, 1 shard, ~1 s — all ✓).
 
 ## 37:00–40:00 | Playback, next steps, and close
 
-**On screen:** Same panel — RC table (*Proposed RC · Consequence · Targets*) and the **Next-step checklist**.
+**On screen:** Same panel — RC table (*Proposed RC · Consequence · Targets*).
 
 **Click Validate all** in the table header. The nine targets fill in with ✓ and the header shows *9/9 met* (~15 s; talk over it).
 
@@ -235,7 +235,7 @@ Read the results (typical: 100%, 1 shard, ~1 s — all ✓).
 
 "On this demo environment, all nine targets you gave us were met. The next step is to rerun the same checks against your workload profile, in-region, to confirm them at Trendify's scale."
 
-"For next steps" — point to the checklist — "validate workload patterns, agree baselines and success measures, confirm architecture and residency constraints with security and legal, and assign owners and dates. A proof of concept is worth considering only where a critical capability can't be validated through discussion or a demonstration like today's."
+"For next steps: validate workload patterns, agree baselines and success measures, confirm architecture and residency constraints with security and legal, and assign owners and dates. A proof of concept is worth considering only where a critical capability can't be validated through discussion or a demonstration like today's."
 
 **Close:** "That is the proposed scope and the evidence still needed to assess technical feasibility for Trendify 3.0."
 

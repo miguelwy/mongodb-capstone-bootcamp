@@ -298,7 +298,7 @@ export const NOTES: Record<TabId | 'recap', Notes> = {
     time: '33–40 min · target 7 min',
     open:
       'We followed one shopper from discovery to checkout to a European order. Each step maps to a proposed RC—and each still needs evidence.',
-    action: 'Click Validate all (≈15 s) and talk over it; walk the three rows and their targets, park cross-cutting topics, then the next-step checklist. Numbers are measured from this laptop over the internet on synthetic data.',
+    action: 'Click Validate all (≈15 s) and talk over it; walk the three rows and their targets, name the Parking Lot topics, then say the next steps. Numbers are measured from this laptop over the internet on synthetic data.',
     prompts: ['Who should own validation for each RC?', 'Which baselines can we get first?'],
     transition: 'Agree owners and dates; close.',
     proves: 'A shared list of what must be validated.',

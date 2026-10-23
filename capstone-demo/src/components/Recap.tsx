@@ -1,20 +1,9 @@
-import { useState } from 'react';
 import { RCS } from '../data';
 import type { Journey } from '../App';
 import { RcBadge } from './Common';
 import { METRICS, MetricStatus, useMetrics } from '../metrics';
 
-const NEXT = [
-  'Validate workload patterns',
-  'Agree baselines & success measures',
-  'Confirm architecture & residency constraints',
-  'Assign owners & dates',
-];
-
-const PARKING = ['Inventory / fulfillment', 'Microservices & release velocity', 'AWS implementation / pricing'];
-
 export default function Recap({ onReset, journey }: { onReset: () => void; journey: Journey }) {
-  const [checked, setChecked] = useState<boolean[]>(NEXT.map(() => false));
   const { live, busy, run, results } = useMetrics();
   const passed = METRICS.filter((m) => results[m.id]?.pass).length;
   const measured = METRICS.filter((m) => results[m.id]).length;
@@ -85,34 +74,6 @@ export default function Recap({ onReset, journey }: { onReset: () => void; journ
             </span>
           </div>
         ))}
-      </div>
-
-      <div className="prove-grid">
-        <section className="card" aria-labelledby="park-h">
-          <h3 id="park-h">Parking lot</h3>
-          <ul className="chips">
-            {PARKING.map((p) => (
-              <li key={p}>{p}</li>
-            ))}
-          </ul>
-        </section>
-        <section className="card" aria-labelledby="next-h">
-          <h3 id="next-h">Next-step checklist</h3>
-          <ul className="checklist">
-            {NEXT.map((n, i) => (
-              <li key={n}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={checked[i]}
-                    onChange={() => setChecked((c) => c.map((v, j) => (j === i ? !v : v)))}
-                  />
-                  <span>{n}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </section>
       </div>
 
       <div className="cta-row">
